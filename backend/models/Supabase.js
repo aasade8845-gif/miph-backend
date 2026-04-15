@@ -1,7 +1,12 @@
 const { Pool } = require('pg');
 
+// Forzar IPv4 en la conexión
+const connectionString = process.env.SUPABASE_URL;
+const forceIPv4 = connectionString.includes('?') ? '&family=4' : '?family=4';
+const finalConnectionString = connectionString + forceIPv4;
+
 const pool = new Pool({
-  connectionString: process.env.SUPABASE_URL,
+  connectionString: finalConnectionString,
   connectionTimeoutMillis: 10000,
 });
 
