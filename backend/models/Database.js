@@ -1,6 +1,4 @@
 const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -9,50 +7,19 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-// Intentar cargar el certificado CA desde diferentes rutas posibles
-let caCert = null;
-const possiblePaths = [
-  path.join(__dirname, '../ca.pem'),           // backend/models/../ca.pem
-  path.join(process.cwd(), 'backend/ca.pem'),  // /opt/render/project/src/backend/ca.pem
-  path.join(process.cwd(), 'ca.pem'),          // /opt/render/project/src/ca.pem
-];
-
-for (const certPath of possiblePaths) {
-  try {
-    if (fs.existsSync(certPath)) {
-      caCert = fs.readFileSync(certPath).toString();
-      console.log(`✅ Certificado CA encontrado en: ${certPath}`);
-      break;
-    }
-  } catch (err) {
-    // Ignorar error, seguir buscando
-  }
-}
-
-if (!caCert) {
-  console.warn('⚠️ No se encontró el certificado CA. La conexión SSL podría fallar.');
-}
-
+// Configuración universal que acepta cualquier certificado SSL
 const pool = new Pool({
   connectionString: databaseUrl,
   connectionTimeoutMillis: 15000,
-  ...(caCert && {
-    ssl: {
-      ca: caCert,
-      rejectUnauthorized: true,
-    },
-  }),
-  ...(!caCert && {
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  }),
+  ssl: {
+    rejectUnauthorized: false, // Acepta cualquier certificado (incluyendo autofirmados)
+  },
 });
 
 async function connectDB() {
   try {
     const client = await pool.connect();
-    console.log('✅ Conectado a la base de datos PostgreSQL (Aiven)');
+    console.log('✅ Conectado a la base de datos PostgreSQL');
     client.release();
 
     await pool.query(`
