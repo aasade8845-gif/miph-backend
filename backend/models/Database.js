@@ -1,20 +1,52 @@
 const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
 
-// La variable de entorno debe llamarse DATABASE_URL en Render
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   console.error('❌ Error: La variable de entorno DATABASE_URL no está definida.');
-  process.exit(1); // Detiene la aplicación si no hay base de datos
+  process.exit(1);
 }
 
-// Configuración mejorada para Aiven
+// Intentar cargar el certificado CA desde diferentes rutas posibles
+let caCert = null;
+const possiblePaths = [
+  path.join(__dirname, '../ca.pem'),           // backend/models/../ca.pem
+  path.join(process.cwd(), 'backend/ca.pem'),  // /opt/render/project/src/backend/ca.pem
+  path.join(process.cwd(), 'ca.pem'),          // /opt/render/project/src/ca.pem
+];
+
+for (const certPath of possiblePaths) {
+  try {
+    if (fs.existsSync(certPath)) {
+      caCert = fs.readFileSync(certPath).toString();
+      console.log(`✅ Certificado CA encontrado en: ${certPath}`);
+      break;
+    }
+  } catch (err) {
+    // Ignorar error, seguir buscando
+  }
+}
+
+if (!caCert) {
+  console.warn('⚠️ No se encontró el certificado CA. La conexión SSL podría fallar.');
+}
+
 const pool = new Pool({
   connectionString: databaseUrl,
-  connectionTimeoutMillis: 10000,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  connectionTimeoutMillis: 15000,
+  ...(caCert && {
+    ssl: {
+      ca: caCert,
+      rejectUnauthorized: true,
+    },
+  }),
+  ...(!caCert && {
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  }),
 });
 
 async function connectDB() {
@@ -23,7 +55,6 @@ async function connectDB() {
     console.log('✅ Conectado a la base de datos PostgreSQL (Aiven)');
     client.release();
 
-    // Crear tabla de propietarios si no existe
     await pool.query(`
       CREATE TABLE IF NOT EXISTS propietarios (
         id SERIAL PRIMARY KEY,
@@ -33,7 +64,6 @@ async function connectDB() {
       )
     `);
     
-    // Insertar datos de ejemplo si la tabla está vacía
     const result = await pool.query('SELECT COUNT(*) FROM propietarios');
     if (parseInt(result.rows[0].count) === 0) {
       await pool.query(`
