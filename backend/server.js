@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { connectDB, getPropietarios, getMorosos } = require('./models/Database');
+const { connectDB, getPropietarios, getMorosos, pool } = require('./models/Database');
 
 const app = express();
 app.use(cors());
@@ -65,6 +65,12 @@ app.post('/api/reportes', async (req, res) => {
     const { tipo, ubicacion, descripcion, urgencia, usuario } = req.body;
     
     console.log('📱 Nuevo reporte desde app:', { tipo, ubicacion, descripcion, urgencia, usuario });
+    
+    // Verificar que pool está definido
+    if (!pool) {
+      console.error('❌ Pool no está definido');
+      return res.status(500).json({ error: 'Pool no está definido' });
+    }
     
     // Guardar en Supabase
     const result = await pool.query(
