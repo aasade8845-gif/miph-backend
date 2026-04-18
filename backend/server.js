@@ -63,11 +63,22 @@ app.get('/api/stats', async (req, res) => {
 app.post('/api/reportes', async (req, res) => {
   try {
     const { tipo, ubicacion, descripcion, urgencia, usuario } = req.body;
+    
     console.log('📱 Nuevo reporte desde app:', { tipo, ubicacion, descripcion, urgencia, usuario });
-    // Aquí después guardaremos en la base de datos
-    res.json({ mensaje: 'Reporte recibido', ok: true });
+    
+    // Guardar en Supabase
+    const result = await pool.query(
+      `INSERT INTO reportes (tipo, ubicacion, descripcion, urgencia, usuario, estado, fecha) 
+       VALUES ($1, $2, $3, $4, $5, 'pendiente', NOW()) 
+       RETURNING *`,
+      [tipo, ubicacion, descripcion, urgencia, usuario]
+    );
+    
+    console.log('✅ Reporte guardado en BD:', result.rows[0]);
+    res.json({ mensaje: 'Reporte guardado', reporte: result.rows[0], ok: true });
+    
   } catch (error) {
-    console.error('Error en /api/reportes:', error);
+    console.error('❌ Error en /api/reportes:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
