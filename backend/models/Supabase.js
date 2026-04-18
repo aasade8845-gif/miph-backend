@@ -6,8 +6,11 @@ const forceIPv4 = connectionString.includes('?') ? '&family=4' : '?family=4';
 const finalConnectionString = connectionString + forceIPv4;
 
 const pool = new Pool({
-  connectionString: finalConnectionString,
+  connectionString: process.env.SUPABASE_URL,
   connectionTimeoutMillis: 10000,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
 async function connectDB() {
