@@ -13,7 +13,7 @@ function Login({ onLogin }) {
     setError('');
     
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/login', {
+      const response = await axios.post('https://miph-backend.onrender.com/api/auth/login', {
         email,
         password
       });

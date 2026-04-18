@@ -12,7 +12,7 @@ function Dashboard({ onLogout }) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/stats');
+        const response = await axios.get('https://miph-backend.onrender.com/api/stats');
         setStats({
           totalUsers: response.data.totalUsers,
           pendingPayments: response.data.pendingPayments,
