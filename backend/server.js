@@ -112,6 +112,18 @@ app.post('/api/reservas', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Ruta para obtener todos los reportes (para el panel web)
+app.get('/api/reportes', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM reportes ORDER BY fecha DESC'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error en GET /api/reportes:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
