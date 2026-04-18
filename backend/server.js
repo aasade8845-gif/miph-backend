@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { connectDB, getPropietarios, getMorosos } = require('./models/Supabase');
+const { connectDB, getPropietarios, getMorosos } = require('./models/Database');
 
 const app = express();
 app.use(cors());

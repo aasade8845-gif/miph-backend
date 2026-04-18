@@ -1,25 +1,29 @@
 const { Pool } = require('pg');
 
-// Forzar IPv4 en la conexión
-const connectionString = process.env.SUPABASE_URL;
-const forceIPv4 = connectionString.includes('?') ? '&family=4' : '?family=4';
-const finalConnectionString = connectionString + forceIPv4;
+// La variable de entorno debe llamarse DATABASE_URL en Render
+const databaseUrl = process.env.DATABASE_URL;
 
+if (!databaseUrl) {
+  console.error('❌ Error: La variable de entorno DATABASE_URL no está definida.');
+  process.exit(1); // Detiene la aplicación si no hay base de datos
+}
+
+// Configuración mejorada para Aiven
 const pool = new Pool({
-  connectionString: process.env.SUPABASE_URL,
+  connectionString: databaseUrl,
   connectionTimeoutMillis: 10000,
   ssl: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: false, // Acepta certificados autofirmados como los de Aiven
+    sslmode: 'require',        // Fuerza el uso de SSL
   },
 });
 
 async function connectDB() {
   try {
-    console.log('⏳ Conectando a Supabase...');
     const client = await pool.connect();
-    console.log('✅ Conectado a Supabase');
+    console.log('✅ Conectado a la base de datos PostgreSQL (Aiven)');
     client.release();
-    
+
     // Crear tabla de propietarios si no existe
     await pool.query(`
       CREATE TABLE IF NOT EXISTS propietarios (
@@ -46,7 +50,7 @@ async function connectDB() {
     
     return pool;
   } catch (error) {
-    console.error('❌ Error conectando a Supabase:', error.message);
+    console.error('❌ Error conectando a la base de datos:', error.message);
     throw error;
   }
 }
