@@ -13,6 +13,7 @@ function Reportes() {
   const cargarReportes = async () => {
     try {
       const response = await axios.get('https://miph-backend.onrender.com/api/reportes');
+      console.log('Reportes recibidos:', response.data);
       setReportes(response.data);
     } catch (error) {
       console.error('Error cargando reportes:', error);
@@ -26,7 +27,6 @@ function Reportes() {
       await axios.put(`https://miph-backend.onrender.com/api/reportes/${id}/estado`, {
         estado: nuevoEstado
       });
-      // Recargar la lista
       cargarReportes();
     } catch (error) {
       console.error('Error actualizando estado:', error);
@@ -63,58 +63,10 @@ function Reportes() {
       </div>
 
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <button
-          onClick={() => setFiltro('todos')}
-          style={{
-            padding: '8px 16px',
-            background: filtro === 'todos' ? '#2e7d32' : '#f0f0f0',
-            color: filtro === 'todos' ? 'white' : '#333',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          Todos
-        </button>
-        <button
-          onClick={() => setFiltro('pendiente')}
-          style={{
-            padding: '8px 16px',
-            background: filtro === 'pendiente' ? '#ff9800' : '#f0f0f0',
-            color: filtro === 'pendiente' ? 'white' : '#333',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          Pendientes
-        </button>
-        <button
-          onClick={() => setFiltro('en proceso')}
-          style={{
-            padding: '8px 16px',
-            background: filtro === 'en proceso' ? '#2196f3' : '#f0f0f0',
-            color: filtro === 'en proceso' ? 'white' : '#333',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          En proceso
-        </button>
-        <button
-          onClick={() => setFiltro('resuelto')}
-          style={{
-            padding: '8px 16px',
-            background: filtro === 'resuelto' ? '#4caf50' : '#f0f0f0',
-            color: filtro === 'resuelto' ? 'white' : '#333',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          Resueltos
-        </button>
+        <button onClick={() => setFiltro('todos')} style={{ padding: '8px 16px', background: filtro === 'todos' ? '#2e7d32' : '#f0f0f0', color: filtro === 'todos' ? 'white' : '#333', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Todos</button>
+        <button onClick={() => setFiltro('pendiente')} style={{ padding: '8px 16px', background: filtro === 'pendiente' ? '#ff9800' : '#f0f0f0', color: filtro === 'pendiente' ? 'white' : '#333', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Pendientes</button>
+        <button onClick={() => setFiltro('en proceso')} style={{ padding: '8px 16px', background: filtro === 'en proceso' ? '#2196f3' : '#f0f0f0', color: filtro === 'en proceso' ? 'white' : '#333', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>En proceso</button>
+        <button onClick={() => setFiltro('resuelto')} style={{ padding: '8px 16px', background: filtro === 'resuelto' ? '#4caf50' : '#f0f0f0', color: filtro === 'resuelto' ? 'white' : '#333', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Resueltos</button>
       </div>
 
       <div style={{ background: 'white', borderRadius: '15px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
@@ -139,32 +91,12 @@ function Reportes() {
                 <td style={{ padding: '15px' }}>{reporte.ubicacion}</td>
                 <td style={{ padding: '15px' }}>{reporte.descripcion}</td>
                 <td style={{ padding: '15px' }}>
-                  <span style={{
-                    background: reporte.urgencia === 'emergencia' ? '#f44336' : 
-                               reporte.urgencia === 'alta' ? '#ff9800' :
-                               reporte.urgencia === 'normal' ? '#ffd700' : '#4caf50',
-                    color: 'white',
-                    padding: '4px 8px',
-                    borderRadius: '12px',
-                    fontSize: '12px'
-                  }}>
+                  <span style={{ background: reporte.urgencia === 'emergencia' ? '#f44336' : reporte.urgencia === 'alta' ? '#ff9800' : reporte.urgencia === 'normal' ? '#ffd700' : '#4caf50', color: 'white', padding: '4px 8px', borderRadius: '12px', fontSize: '12px' }}>
                     {reporte.urgencia}
                   </span>
                 </td>
                 <td style={{ padding: '15px' }}>
-                  <select
-                    value={reporte.estado}
-                    onChange={(e) => cambiarEstado(reporte.id, e.target.value)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      border: `1px solid ${getEstadoColor(reporte.estado)}`,
-                      background: getEstadoColor(reporte.estado) + '20',
-                      color: getEstadoColor(reporte.estado),
-                      fontWeight: 'bold',
-                      cursor: 'pointer'
-                    }}
-                  >
+                  <select value={reporte.estado} onChange={(e) => cambiarEstado(reporte.id, e.target.value)} style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${getEstadoColor(reporte.estado)}`, background: getEstadoColor(reporte.estado) + '20', color: getEstadoColor(reporte.estado), fontWeight: 'bold', cursor: 'pointer' }}>
                     <option value="pendiente">Pendiente</option>
                     <option value="en proceso">En proceso</option>
                     <option value="resuelto">Resuelto</option>
@@ -172,19 +104,7 @@ function Reportes() {
                 </td>
                 <td style={{ padding: '15px' }}>{new Date(reporte.fecha).toLocaleString()}</td>
                 <td style={{ padding: '15px' }}>
-                  <button
-                    onClick={() => window.open(`https://miph-backend.onrender.com/api/reportes/${reporte.id}`, '_blank')}
-                    style={{
-                      background: '#2196f3',
-                      color: 'white',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Ver
-                  </button>
+                  <button onClick={() => window.open(`https://miph-backend.onrender.com/api/reportes/${reporte.id}`, '_blank')} style={{ background: '#2196f3', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>Ver</button>
                 </td>
               </tr>
             ))}

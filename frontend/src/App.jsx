@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Reportes from './pages/Reportes';
+import Reservas from './pages/Reservas';
+
+// Dentro del componente, agregar:
+if (paginaActual === 'reservas') {
+  return <Reservas />;
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {

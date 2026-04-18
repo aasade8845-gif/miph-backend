@@ -53,6 +53,9 @@ function Dashboard({ onLogout, onNavigate }) {
       cursor: 'pointer'
     }}
   >
+    <button onClick={() => onNavigate('reservas')} style={{ background: '#ff9800', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>
+  📅 Reservas
+</button>
     Cerrar sesión
   </button>
 </div>
