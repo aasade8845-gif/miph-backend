@@ -13,8 +13,7 @@ const pool = new Pool({
   connectionString: databaseUrl,
   connectionTimeoutMillis: 10000,
   ssl: {
-    rejectUnauthorized: false, // Acepta certificados autofirmados como los de Aiven
-    sslmode: 'require',        // Fuerza el uso de SSL
+    rejectUnauthorized: false,
   },
 });
 
