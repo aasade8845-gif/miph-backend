@@ -59,7 +59,42 @@ app.get('/api/stats', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Ruta para recibir reportes desde la app móvil
+app.post('/api/reportes', async (req, res) => {
+  try {
+    const { tipo, ubicacion, descripcion, urgencia, usuario } = req.body;
+    console.log('📱 Nuevo reporte desde app:', { tipo, ubicacion, descripcion, urgencia, usuario });
+    // Aquí después guardaremos en la base de datos
+    res.json({ mensaje: 'Reporte recibido', ok: true });
+  } catch (error) {
+    console.error('Error en /api/reportes:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
+// Ruta para recibir mensajes del chat desde app móvil
+app.post('/api/mensajes', async (req, res) => {
+  try {
+    const { mensaje, usuario } = req.body;
+    console.log('💬 Nuevo mensaje desde app:', { mensaje, usuario });
+    res.json({ mensaje: 'Mensaje recibido', ok: true });
+  } catch (error) {
+    console.error('Error en /api/mensajes:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Ruta para recibir reservas desde app móvil
+app.post('/api/reservas', async (req, res) => {
+  try {
+    const { fecha, hora, area, nombre } = req.body;
+    console.log('📅 Nueva reserva desde app:', { fecha, hora, area, nombre });
+    res.json({ mensaje: 'Reserva recibida', ok: true });
+  } catch (error) {
+    console.error('Error en /api/reservas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
