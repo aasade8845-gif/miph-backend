@@ -3,6 +3,12 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Reportes from './pages/Reportes';
 import Reservas from './pages/Reservas';
+import Chat from './pages/Chat';
+
+// Dentro del componente, agregar:
+if (paginaActual === 'chat') {
+  return <Chat />;
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {

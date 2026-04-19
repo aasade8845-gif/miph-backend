@@ -142,11 +142,51 @@ app.put('/api/reservas/:id/estado', async (req, res) => {
 });
 
 // Mensajes
+// Enviar mensaje (desde app o panel)
 app.post('/api/mensajes', async (req, res) => {
   try {
-    const { mensaje, usuario } = req.body;
-    console.log('💬 Nuevo mensaje:', { mensaje, usuario });
-    res.json({ mensaje: 'Mensaje recibido', ok: true });
+    const { remitente, destinatario, mensaje } = req.body;
+    
+    console.log('💬 Nuevo mensaje:', { remitente, destinatario, mensaje });
+    
+    const result = await pool.query(
+      `INSERT INTO mensajes (remitente, destinatario, mensaje, leido, fecha) 
+       VALUES ($1, $2, $3, false, NOW()) 
+       RETURNING *`,
+      [remitente, destinatario, mensaje]
+    );
+    
+    console.log('✅ Mensaje guardado:', result.rows[0]);
+    res.json({ mensaje: 'Mensaje enviado', data: result.rows[0], ok: true });
+    
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Obtener mensajes de un usuario
+app.get('/api/mensajes/:usuario', async (req, res) => {
+  try {
+    const { usuario } = req.params;
+    const result = await pool.query(
+      `SELECT * FROM mensajes 
+       WHERE remitente = $1 OR destinatario = $1 
+       ORDER BY fecha ASC`,
+      [usuario]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Marcar mensaje como leído
+app.put('/api/mensajes/:id/leido', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('UPDATE mensajes SET leido = true WHERE id = $1', [id]);
+    res.json({ mensaje: 'Mensaje marcado como leído', ok: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

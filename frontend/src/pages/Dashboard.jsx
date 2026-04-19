@@ -45,6 +45,10 @@ function Dashboard({ onLogout, onNavigate }) {
           onClick={onLogout}
           style={{ background: '#f44336', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
         >
+          <button onClick={() => onNavigate('chat')} style={{ background: '#9c27b0', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>
+          
+         💬 Chat
+         </button>
           Cerrar sesión
         </button>
       </div>
