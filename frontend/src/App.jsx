@@ -4,18 +4,13 @@ import Login from './pages/Login';
 import Reportes from './pages/Reportes';
 import Reservas from './pages/Reservas';
 
-// Dentro del componente, agregar:
-if (paginaActual === 'reservas') {
-  return <Reservas />;
-}
-
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('token') !== null;
   });
   const [paginaActual, setPaginaActual] = useState('dashboard');
 
-  const handleLogin = (usuario) => {
+  const handleLogin = () => {
     setIsAuthenticated(true);
   };
 
@@ -32,6 +27,10 @@ function App() {
 
   if (paginaActual === 'reportes') {
     return <Reportes />;
+  }
+
+  if (paginaActual === 'reservas') {
+    return <Reservas />;
   }
 
   return <Dashboard onLogout={handleLogout} onNavigate={setPaginaActual} />;
