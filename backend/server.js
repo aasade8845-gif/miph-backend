@@ -17,7 +17,7 @@ const USUARIO_ADMIN = {
   rol: 'admin'
 };
 
-// Conectar a Supabase al iniciar
+// Conectar a la base de datos
 connectDB();
 
 // Login
@@ -43,12 +43,11 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
-// Ruta de estadísticas (desde Supabase)
+// Estadísticas
 app.get('/api/stats', async (req, res) => {
   try {
     const totalUsers = await getPropietarios();
     const morosos = await getMorosos();
-    
     res.json({
       totalUsers: totalUsers.length,
       pendingPayments: morosos.length,
@@ -59,78 +58,53 @@ app.get('/api/stats', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-// Ruta para recibir reportes desde la app móvil
+
+// Reportes
 app.post('/api/reportes', async (req, res) => {
   try {
     const { tipo, ubicacion, descripcion, urgencia, usuario } = req.body;
-    
-    console.log('📱 Nuevo reporte desde app:', { tipo, ubicacion, descripcion, urgencia, usuario });
-    
-    // Verificar que pool está definido
-    if (!pool) {
-      console.error('❌ Pool no está definido');
-      return res.status(500).json({ error: 'Pool no está definido' });
-    }
-    
-    // Guardar en Supabase
-    app.post('/api/reservas', async (req, res) => {
-  try {
-    const { fecha, hora, area, nombre, usuario } = req.body;
-    
-    console.log('📅 Nueva reserva recibida:', { fecha, hora, area, nombre, usuario });
+    console.log('📱 Nuevo reporte:', { tipo, ubicacion, descripcion, urgencia, usuario });
     
     const result = await pool.query(
-      `INSERT INTO reservas (fecha, hora, area, nombre, usuario, estado) 
-       VALUES ($1, $2, $3, $4, $5, 'pendiente') 
+      `INSERT INTO reportes (tipo, ubicacion, descripcion, urgencia, usuario, estado, fecha) 
+       VALUES ($1, $2, $3, $4, $5, 'pendiente', NOW()) 
        RETURNING *`,
-      [fecha, hora, area, nombre, usuario]
+      [tipo, ubicacion, descripcion, urgencia, usuario]
     );
     
-    console.log('✅ Reserva guardada en BD:', result.rows[0]);
-    res.json({ mensaje: 'Reserva guardada', reserva: result.rows[0], ok: true });
-    
-  } catch (error) {
-    console.error('❌ Error en POST /api/reservas:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-    
-    console.log('✅ Reporte guardado en BD:', result.rows[0]);
+    console.log('✅ Reporte guardado:', result.rows[0]);
     res.json({ mensaje: 'Reporte guardado', reporte: result.rows[0], ok: true });
-    
   } catch (error) {
-    console.error('❌ Error en /api/reportes:', error.message);
+    console.error('❌ Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Ruta para recibir mensajes del chat desde app móvil
-app.post('/api/mensajes', async (req, res) => {
+app.get('/api/reportes', async (req, res) => {
   try {
-    const { mensaje, usuario } = req.body;
-    console.log('💬 Nuevo mensaje desde app:', { mensaje, usuario });
-    res.json({ mensaje: 'Mensaje recibido', ok: true });
+    const result = await pool.query('SELECT * FROM reportes ORDER BY fecha DESC');
+    res.json(result.rows);
   } catch (error) {
-    console.error('Error en /api/mensajes:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Ruta para recibir reservas desde app móvil
-app.post('/api/reservas', async (req, res) => {
+app.put('/api/reportes/:id/estado', async (req, res) => {
   try {
-    const { fecha, hora, area, nombre } = req.body;
-    console.log('📅 Nueva reserva desde app:', { fecha, hora, area, nombre });
-    res.json({ mensaje: 'Reserva recibida', ok: true });
+    const { id } = req.params;
+    const { estado } = req.body;
+    const result = await pool.query('UPDATE reportes SET estado = $1 WHERE id = $2 RETURNING *', [estado, id]);
+    res.json({ mensaje: 'Estado actualizado', reporte: result.rows[0] });
   } catch (error) {
-    console.error('Error en /api/reservas:', error);
     res.status(500).json({ error: error.message });
-    // Ruta para recibir reservas desde app móvil
+  }
+});
+
+// Reservas
 app.post('/api/reservas', async (req, res) => {
   try {
     const { fecha, hora, area, nombre, usuario } = req.body;
-    
-    console.log('📅 Nueva reserva desde app:', { fecha, hora, area, nombre, usuario });
+    console.log('📅 Nueva reserva:', { fecha, hora, area, nombre, usuario });
     
     const result = await pool.query(
       `INSERT INTO reservas (fecha, hora, area, nombre, usuario, estado) 
@@ -139,57 +113,47 @@ app.post('/api/reservas', async (req, res) => {
       [fecha, hora, area, nombre, usuario]
     );
     
-    console.log('✅ Reserva guardada en BD:', result.rows[0]);
+    console.log('✅ Reserva guardada:', result.rows[0]);
     res.json({ mensaje: 'Reserva guardada', reserva: result.rows[0], ok: true });
-    
   } catch (error) {
-    console.error('❌ Error en /api/reservas:', error.message);
+    console.error('❌ Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Ruta para obtener todas las reservas (para el panel web)
 app.get('/api/reservas', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM reservas ORDER BY fecha DESC');
     res.json(result.rows);
   } catch (error) {
-    console.error('Error en GET /api/reservas:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Ruta para actualizar estado de una reserva
 app.put('/api/reservas/:id/estado', async (req, res) => {
   try {
     const { id } = req.params;
     const { estado } = req.body;
-    
-    const result = await pool.query(
-      'UPDATE reservas SET estado = $1 WHERE id = $2 RETURNING *',
-      [estado, id]
-    );
-    
+    const result = await pool.query('UPDATE reservas SET estado = $1 WHERE id = $2 RETURNING *', [estado, id]);
     res.json({ mensaje: 'Estado actualizado', reserva: result.rows[0] });
   } catch (error) {
-    console.error('Error actualizando estado:', error);
     res.status(500).json({ error: error.message });
   }
 });
-// Ruta para obtener todos los reportes (para el panel web)
-app.get('/api/reportes', async (req, res) => {
+
+// Mensajes
+app.post('/api/mensajes', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM reportes ORDER BY fecha DESC'
-    );
-    res.json(result.rows);
+    const { mensaje, usuario } = req.body;
+    console.log('💬 Nuevo mensaje:', { mensaje, usuario });
+    res.json({ mensaje: 'Mensaje recibido', ok: true });
   } catch (error) {
-    console.error('Error en GET /api/reportes:', error);
     res.status(500).json({ error: error.message });
   }
 });
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`🔐 Login: admin@miph.com / admin123`);
-});"// Redeploy" 
+});
