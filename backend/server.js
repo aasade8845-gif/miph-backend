@@ -73,12 +73,27 @@ app.post('/api/reportes', async (req, res) => {
     }
     
     // Guardar en Supabase
+    app.post('/api/reservas', async (req, res) => {
+  try {
+    const { fecha, hora, area, nombre, usuario } = req.body;
+    
+    console.log('📅 Nueva reserva recibida:', { fecha, hora, area, nombre, usuario });
+    
     const result = await pool.query(
-      `INSERT INTO reportes (tipo, ubicacion, descripcion, urgencia, usuario, estado, fecha) 
-       VALUES ($1, $2, $3, $4, $5, 'pendiente', NOW()) 
+      `INSERT INTO reservas (fecha, hora, area, nombre, usuario, estado) 
+       VALUES ($1, $2, $3, $4, $5, 'pendiente') 
        RETURNING *`,
-      [tipo, ubicacion, descripcion, urgencia, usuario]
+      [fecha, hora, area, nombre, usuario]
     );
+    
+    console.log('✅ Reserva guardada en BD:', result.rows[0]);
+    res.json({ mensaje: 'Reserva guardada', reserva: result.rows[0], ok: true });
+    
+  } catch (error) {
+    console.error('❌ Error en POST /api/reservas:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
     
     console.log('✅ Reporte guardado en BD:', result.rows[0]);
     res.json({ mensaje: 'Reporte guardado', reporte: result.rows[0], ok: true });
@@ -110,6 +125,55 @@ app.post('/api/reservas', async (req, res) => {
   } catch (error) {
     console.error('Error en /api/reservas:', error);
     res.status(500).json({ error: error.message });
+    // Ruta para recibir reservas desde app móvil
+app.post('/api/reservas', async (req, res) => {
+  try {
+    const { fecha, hora, area, nombre, usuario } = req.body;
+    
+    console.log('📅 Nueva reserva desde app:', { fecha, hora, area, nombre, usuario });
+    
+    const result = await pool.query(
+      `INSERT INTO reservas (fecha, hora, area, nombre, usuario, estado) 
+       VALUES ($1, $2, $3, $4, $5, 'pendiente') 
+       RETURNING *`,
+      [fecha, hora, area, nombre, usuario]
+    );
+    
+    console.log('✅ Reserva guardada en BD:', result.rows[0]);
+    res.json({ mensaje: 'Reserva guardada', reserva: result.rows[0], ok: true });
+    
+  } catch (error) {
+    console.error('❌ Error en /api/reservas:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Ruta para obtener todas las reservas (para el panel web)
+app.get('/api/reservas', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM reservas ORDER BY fecha DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error en GET /api/reservas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Ruta para actualizar estado de una reserva
+app.put('/api/reservas/:id/estado', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+    
+    const result = await pool.query(
+      'UPDATE reservas SET estado = $1 WHERE id = $2 RETURNING *',
+      [estado, id]
+    );
+    
+    res.json({ mensaje: 'Estado actualizado', reserva: result.rows[0] });
+  } catch (error) {
+    console.error('Error actualizando estado:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 // Ruta para obtener todos los reportes (para el panel web)
@@ -129,4 +193,3 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`🔐 Login: admin@miph.com / admin123`);
 });"// Redeploy" 
-"// Redeploy" 
