@@ -29,31 +29,24 @@ function Dashboard({ onLogout, onNavigate }) {
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', gap: '10px' }}>
-        <button
-          onClick={() => onNavigate('reportes')}
-          style={{ background: '#2196f3', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
-        >
+        <button className="btn-primary" onClick={() => onNavigate('reportes')}>
           📋 Reportes
         </button>
-        <button
-          onClick={() => onNavigate('reservas')}
-          style={{ background: '#ff9800', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
-        >
+        <button className="btn-primary" onClick={() => onNavigate('reservas')}>
           📅 Reservas
+        </button>
+        <button className="btn-primary" onClick={() => onNavigate('chat')}>
+          💬 Chat
         </button>
         <button
           onClick={onLogout}
           style={{ background: '#f44336', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
         >
-          <button onClick={() => onNavigate('chat')} style={{ background: '#9c27b0', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>
-          
-         💬 Chat
-         </button>
           Cerrar sesión
         </button>
       </div>
 
-      <div style={{ background: 'linear-gradient(135deg, #1e3c32 0%, #2e7d32 100%)', color: 'white', padding: '20px', borderRadius: '15px', marginBottom: '30px' }}>
+      <div className="header-gradient" style={{ color: 'white', padding: '20px', borderRadius: '15px', marginBottom: '30px' }}>
         <h1 style={{ fontSize: '28px' }}>Panel de Administración MiPH</h1>
         <p style={{ opacity: 0.8 }}>Bienvenido al sistema de gestión de tu comunidad</p>
       </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-function Reservas() {
+function Reservas({ onNavigate }) {
+  console.log('Reservas recibió onNavigate:', onNavigate);
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('todos');
@@ -69,6 +70,24 @@ function Reservas() {
 
   return (
     <div style={{ padding: '20px' }}>
+      {/* Botón Volver al Dashboard */}
+      <div style={{ marginBottom: '20px' }}>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          style={{
+            background: '#FFD700',
+            color: '#1e3c32',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+          ← Volver al Dashboard
+        </button>
+      </div>
+
       <div style={{ background: 'linear-gradient(135deg, #1e3c32 0%, #2e7d32 100%)', color: 'white', padding: '20px', borderRadius: '15px', marginBottom: '30px' }}>
         <h1>📅 Gestión de Reservas</h1>
         <p>Administra las reservas de áreas sociales</p>

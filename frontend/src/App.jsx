@@ -5,15 +5,8 @@ import Reportes from './pages/Reportes';
 import Reservas from './pages/Reservas';
 import Chat from './pages/Chat';
 
-// Dentro del componente, agregar:
-if (paginaActual === 'chat') {
-  return <Chat />;
-}
-
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('token') !== null;
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [paginaActual, setPaginaActual] = useState('dashboard');
 
   const handleLogin = () => {
@@ -21,8 +14,6 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('usuario');
     setIsAuthenticated(false);
     setPaginaActual('dashboard');
   };
@@ -32,11 +23,15 @@ function App() {
   }
 
   if (paginaActual === 'reportes') {
-    return <Reportes />;
+    return <Reportes onNavigate={setPaginaActual} />;
   }
 
   if (paginaActual === 'reservas') {
-    return <Reservas />;
+    return <Reservas onNavigate={setPaginaActual} />;
+  }
+
+  if (paginaActual === 'chat') {
+    return <Chat onNavigate={setPaginaActual} />;
   }
 
   return <Dashboard onLogout={handleLogout} onNavigate={setPaginaActual} />;
