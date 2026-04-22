@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Reportes from './pages/Reportes';
 import Reservas from './pages/Reservas';
 import Chat from './pages/Chat';
+import EmergenciasAdmin from './pages/EmergenciasAdmin';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -20,6 +21,10 @@ function App() {
 
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
+  }
+
+  if (paginaActual === 'emergencias-admin') {
+  return <EmergenciasAdmin onNavigate={setPaginaActual} />;
   }
 
   if (paginaActual === 'reportes') {

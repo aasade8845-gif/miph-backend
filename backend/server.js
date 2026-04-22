@@ -192,6 +192,35 @@ app.put('/api/mensajes/:id/leido', async (req, res) => {
   }
 });
 
+// Obtener todos los contactos de emergencia
+app.get('/api/emergencias', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM emergencias ORDER BY orden ASC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Actualizar un contacto de emergencia (solo admin)
+app.put('/api/emergencias/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { telefono, nombre } = req.body;
+    
+    const result = await pool.query(
+      'UPDATE emergencias SET telefono = $1, nombre = $2 WHERE id = $3 RETURNING *',
+      [telefono, nombre, id]
+    );
+    
+    res.json({ mensaje: 'Contacto actualizado', emergencia: result.rows[0] });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);

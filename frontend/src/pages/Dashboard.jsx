@@ -35,6 +35,9 @@ function Dashboard({ onLogout, onNavigate }) {
         <button className="btn-primary" onClick={() => onNavigate('reservas')}>
           📅 Reservas
         </button>
+        <button className="btn-primary" onClick={() => onNavigate('emergencias-admin')}>
+          🚨 Emergencias
+        </button>
         <button className="btn-primary" onClick={() => onNavigate('chat')}>
           💬 Chat
         </button>
