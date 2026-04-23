@@ -41,6 +41,9 @@ function Dashboard({ onLogout, onNavigate }) {
         <button className="btn-primary" onClick={() => onNavigate('chat')}>
           💬 Chat
         </button>
+        <button className="btn-primary" onClick={() => onNavigate('visitas-admin')}>
+          📋 Visitas
+        </button>
         <button
           onClick={onLogout}
           style={{ background: '#f44336', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}

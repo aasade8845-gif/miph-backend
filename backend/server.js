@@ -221,6 +221,79 @@ app.put('/api/emergencias/:id', async (req, res) => {
   }
 });
 
+// Crear una nueva visita (propietario)
+app.post('/api/visitas', async (req, res) => {
+  try {
+    const { unidad, nombre_visitante, fecha, hora_entrada, creado_por } = req.body;
+    
+    // Generar código QR único
+    const codigo_qr = `${unidad}-${nombre_visitante}-${Date.now()}`;
+    
+    const result = await pool.query(
+      `INSERT INTO visitas (unidad, nombre_visitante, fecha, hora_entrada, codigo_qr, creado_por, estado) 
+       VALUES ($1, $2, $3, $4, $5, $6, 'activo') 
+       RETURNING *`,
+      [unidad, nombre_visitante, fecha, hora_entrada, codigo_qr, creado_por]
+    );
+    
+    res.json({ mensaje: 'Visita creada', visita: result.rows[0], codigo_qr });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Validar una visita (escanear QR)
+app.post('/api/visitas/validar', async (req, res) => {
+  try {
+    const { codigo_qr } = req.body;
+    
+    const result = await pool.query(
+      `SELECT * FROM visitas WHERE codigo_qr = $1 AND estado = 'activo'`,
+      [codigo_qr]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Código QR inválido o expirado' });
+    }
+    
+    // Marcar como usado
+    await pool.query(
+      `UPDATE visitas SET estado = 'usado', hora_entrada = NOW() WHERE id = $1`,
+      [result.rows[0].id]
+    );
+    
+    res.json({ mensaje: 'Acceso permitido', visita: result.rows[0] });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Obtener visitas por unidad (propietario)
+app.get('/api/visitas/unidad/:unidad', async (req, res) => {
+  try {
+    const { unidad } = req.params;
+    const result = await pool.query(
+      'SELECT * FROM visitas WHERE unidad = $1 ORDER BY fecha DESC',
+      [unidad]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Obtener todas las visitas (administrador)
+app.get('/api/visitas', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM visitas ORDER BY fecha DESC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
