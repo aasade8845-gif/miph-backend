@@ -32,6 +32,48 @@ function Reportes({ onNavigate }) {
     }
   };
 
+  const [mostrarProveedores, setMostrarProveedores] = useState(null);
+const [proveedoresDisponibles, setProveedoresDisponibles] = useState([]);
+
+const derivarAProveedor = async (reporteId, especialidad) => {
+  try {
+    const response = await axios.post('https://miph-backend-api.onrender.com/api/ordenes', {
+      reporte_id: reporteId,
+      especialidad: especialidad,
+      presupuesto: 0
+    });
+    setProveedoresDisponibles(response.data.proveedores);
+    setMostrarProveedores(reporteId);
+  } catch (error) {
+    alert('No hay proveedores disponibles para esta especialidad');
+  }
+};
+
+const asignarProveedor = async (ordenId, proveedorId) => {
+  try {
+    await axios.put(`https://miph-backend-api.onrender.com/api/ordenes/${ordenId}/aceptar`, {
+      proveedor_id: proveedorId
+    });
+    alert('Proveedor asignado correctamente');
+    setMostrarProveedores(null);
+    cargarReportes();
+  } catch (error) {
+    alert('Error al asignar proveedor');
+    }
+  };
+
+  <td style={{ padding: '15px' }}>
+  <button
+    onClick={() => derivarAProveedor(reporte.id, 
+      reporte.tipo === '💡 Eléctrico' ? 'electricista' :
+      reporte.tipo === '🚰 Plomería' ? 'plomero' : 'limpieza'
+    )}
+    style={{ background: '#ff9800', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}
+  >
+    🔧 Derivar a proveedor
+  </button>
+</td>
+
   const getEstadoColor = (estado) => {
     switch(estado) {
       case 'pendiente': return '#ff9800';
@@ -71,6 +113,21 @@ function Reportes({ onNavigate }) {
         <h1 style={{ fontSize: '28px' }}>📋 Gestión de Reportes</h1>
         <p style={{ opacity: 0.8 }}>Administra los reportes enviados desde la app móvil</p>
       </div>
+
+      {mostrarProveedores && (
+  <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ background: 'white', padding: '20px', borderRadius: '15px', maxWidth: '500px', width: '90%' }}>
+      <h3>Seleccionar proveedor</h3>
+      {proveedoresDisponibles.map(p => (
+        <div key={p.id} style={{ padding: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div><strong>{p.nombre}</strong> - {p.especialidad}<br />📞 {p.telefono}</div>
+          <button onClick={() => asignarProveedor(mostrarProveedores, p.id)} style={{ background: '#4caf50', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Asignar</button>
+        </div>
+      ))}
+      <button onClick={() => setMostrarProveedores(null)} style={{ marginTop: '15px', background: '#999', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
+    </div>
+  </div>
+)}
 
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <button onClick={() => setFiltro('todos')} style={{ padding: '8px 16px', background: filtro === 'todos' ? '#2e7d32' : '#f0f0f0', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Todos</button>
