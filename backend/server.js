@@ -20,6 +20,10 @@ const USUARIO_ADMIN = {
 // Conectar a la base de datos
 connectDB();
 
+// ============================================
+// AUTENTICACIÓN
+// ============================================
+
 // Login
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
@@ -43,7 +47,10 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
-// Estadísticas
+// ============================================
+// ESTADÍSTICAS
+// ============================================
+
 app.get('/api/stats', async (req, res) => {
   try {
     const totalUsers = await getPropietarios();
@@ -59,7 +66,21 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// Ruta para recibir reportes desde app móvil
+// ============================================
+// REPORTES
+// ============================================
+
+// Obtener todos los reportes
+app.get('/api/reportes', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM reportes ORDER BY fecha DESC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Crear un nuevo reporte (desde app móvil)
 app.post('/api/reportes', async (req, res) => {
   try {
     const { tipo, ubicacion, descripcion, urgencia, usuario } = req.body;
@@ -87,15 +108,8 @@ app.post('/api/reportes', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-app.get('/api/reportes', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM reportes ORDER BY fecha DESC');
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
+// Actualizar estado de un reporte
 app.put('/api/reportes/:id/estado', async (req, res) => {
   try {
     const { id } = req.params;
@@ -107,7 +121,19 @@ app.put('/api/reportes/:id/estado', async (req, res) => {
   }
 });
 
-// Reservas
+// ============================================
+// RESERVAS
+// ============================================
+
+app.get('/api/reservas', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM reservas ORDER BY fecha DESC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/reservas', async (req, res) => {
   try {
     const { fecha, hora, area, nombre, usuario } = req.body;
@@ -120,19 +146,9 @@ app.post('/api/reservas', async (req, res) => {
       [fecha, hora, area, nombre, usuario]
     );
     
-    console.log('✅ Reserva guardada:', result.rows[0]);
     res.json({ mensaje: 'Reserva guardada', reserva: result.rows[0], ok: true });
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/reservas', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM reservas ORDER BY fecha DESC');
-    res.json(result.rows);
-  } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -142,18 +158,43 @@ app.put('/api/reservas/:id/estado', async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
     const result = await pool.query('UPDATE reservas SET estado = $1 WHERE id = $2 RETURNING *', [estado, id]);
-    res.json({ mensaje: 'Estado actualizado', reserva: result.rows[0] });
+    res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Mensajes
-// Enviar mensaje (desde app o panel)
+// ============================================
+// EMERGENCIAS
+// ============================================
+
+app.get('/api/emergencias', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM emergencias ORDER BY orden ASC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/emergencias/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { telefono, nombre } = req.body;
+    const result = await pool.query('UPDATE emergencias SET telefono = $1, nombre = $2 WHERE id = $3 RETURNING *', [telefono, nombre, id]);
+    res.json({ mensaje: 'Contacto actualizado', emergencia: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// MENSAJES
+// ============================================
+
 app.post('/api/mensajes', async (req, res) => {
   try {
     const { remitente, destinatario, mensaje } = req.body;
-    
     console.log('💬 Nuevo mensaje:', { remitente, destinatario, mensaje });
     
     const result = await pool.query(
@@ -163,23 +204,17 @@ app.post('/api/mensajes', async (req, res) => {
       [remitente, destinatario, mensaje]
     );
     
-    console.log('✅ Mensaje guardado:', result.rows[0]);
     res.json({ mensaje: 'Mensaje enviado', data: result.rows[0], ok: true });
-    
   } catch (error) {
-    console.error('❌ Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Obtener mensajes de un usuario
 app.get('/api/mensajes/:usuario', async (req, res) => {
   try {
     const { usuario } = req.params;
     const result = await pool.query(
-      `SELECT * FROM mensajes 
-       WHERE remitente = $1 OR destinatario = $1 
-       ORDER BY fecha ASC`,
+      'SELECT * FROM mensajes WHERE remitente = $1 OR destinatario = $1 ORDER BY fecha ASC',
       [usuario]
     );
     res.json(result.rows);
@@ -188,22 +223,67 @@ app.get('/api/mensajes/:usuario', async (req, res) => {
   }
 });
 
-// Marcar mensaje como leído
-app.put('/api/mensajes/:id/leido', async (req, res) => {
+// ============================================
+// VISITAS
+// ============================================
+
+app.post('/api/visitas', async (req, res) => {
   try {
-    const { id } = req.params;
-    await pool.query('UPDATE mensajes SET leido = true WHERE id = $1', [id]);
-    res.json({ mensaje: 'Mensaje marcado como leído', ok: true });
+    const { unidad, nombre_visitante, fecha, hora_entrada, creado_por } = req.body;
+    const codigo_qr = `${unidad}-${nombre_visitante}-${Date.now()}`;
+    
+    const result = await pool.query(
+      `INSERT INTO visitas (unidad, nombre_visitante, fecha, hora_entrada, codigo_qr, creado_por) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING *`,
+      [unidad, nombre_visitante, fecha, hora_entrada, codigo_qr, creado_por]
+    );
+    
+    res.json({ mensaje: 'Visita creada', visita: result.rows[0], codigo_qr });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/visitas/validar', async (req, res) => {
+  try {
+    const { codigo_qr } = req.body;
+    
+    const result = await pool.query(
+      `SELECT * FROM visitas WHERE codigo_qr = $1 AND estado = 'activo'`,
+      [codigo_qr]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Código QR inválido o expirado' });
+    }
+    
+    await pool.query(
+      `UPDATE visitas SET estado = 'usado', hora_entrada = NOW() WHERE id = $1`,
+      [result.rows[0].id]
+    );
+    
+    res.json({ mensaje: 'Acceso permitido', visita: result.rows[0] });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/visitas', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM visitas ORDER BY fecha DESC');
+    res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // ============================================
-// RED DE PROVEEDORES
+// PROVEEDORES
 // ============================================
 
-// Obtener todos los proveedores (para el panel web)
 app.get('/api/proveedores', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM proveedores ORDER BY especialidad, nombre');
@@ -213,7 +293,6 @@ app.get('/api/proveedores', async (req, res) => {
   }
 });
 
-// Registrar un nuevo proveedor
 app.post('/api/proveedores', async (req, res) => {
   try {
     const { nombre, email, telefono, especialidad } = req.body;
@@ -227,12 +306,10 @@ app.post('/api/proveedores', async (req, res) => {
   }
 });
 
-// Publicar una orden de trabajo (desde un reporte)
 app.post('/api/ordenes', async (req, res) => {
   try {
     const { reporte_id, especialidad, presupuesto } = req.body;
     
-    // Buscar proveedores disponibles de esa especialidad
     const proveedores = await pool.query(
       'SELECT * FROM proveedores WHERE especialidad = $1 AND disponible = true',
       [especialidad]
@@ -253,140 +330,9 @@ app.post('/api/ordenes', async (req, res) => {
   }
 });
 
-// Proveedor acepta una orden
-app.put('/api/ordenes/:id/aceptar', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { proveedor_id } = req.body;
-    
-    const result = await pool.query(
-      'UPDATE ordenes_trabajo SET proveedor_id = $1, estado = $2, fecha_asignacion = NOW() WHERE id = $3 RETURNING *',
-      [proveedor_id, 'aceptada', id]
-    );
-    
-    res.json({ mensaje: 'Orden aceptada', orden: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Obtener órdenes pendientes (para proveedores)
-app.get('/api/ordenes/pendientes', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT o.*, r.tipo, r.ubicacion, r.descripcion, r.urgencia 
-       FROM ordenes_trabajo o 
-       JOIN reportes r ON o.reporte_id = r.id 
-       WHERE o.estado = 'pendiente' 
-       ORDER BY r.urgencia DESC, o.creado_en ASC`
-    );
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Obtener todos los contactos de emergencia
-app.get('/api/emergencias', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM emergencias ORDER BY orden ASC');
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Actualizar un contacto de emergencia (solo admin)
-app.put('/api/emergencias/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { telefono, nombre } = req.body;
-    
-    const result = await pool.query(
-      'UPDATE emergencias SET telefono = $1, nombre = $2 WHERE id = $3 RETURNING *',
-      [telefono, nombre, id]
-    );
-    
-    res.json({ mensaje: 'Contacto actualizado', emergencia: result.rows[0] });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Crear una nueva visita (propietario)
-app.post('/api/visitas', async (req, res) => {
-  try {
-    const { unidad, nombre_visitante, fecha, hora_entrada, creado_por } = req.body;
-    
-    // Generar código QR único
-    const codigo_qr = `${unidad}-${nombre_visitante}-${Date.now()}`;
-    
-    const result = await pool.query(
-      `INSERT INTO visitas (unidad, nombre_visitante, fecha, hora_entrada, codigo_qr, creado_por, estado) 
-       VALUES ($1, $2, $3, $4, $5, $6, 'activo') 
-       RETURNING *`,
-      [unidad, nombre_visitante, fecha, hora_entrada, codigo_qr, creado_por]
-    );
-    
-    res.json({ mensaje: 'Visita creada', visita: result.rows[0], codigo_qr });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Validar una visita (escanear QR)
-app.post('/api/visitas/validar', async (req, res) => {
-  try {
-    const { codigo_qr } = req.body;
-    
-    const result = await pool.query(
-      `SELECT * FROM visitas WHERE codigo_qr = $1 AND estado = 'activo'`,
-      [codigo_qr]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Código QR inválido o expirado' });
-    }
-    
-    // Marcar como usado
-    await pool.query(
-      `UPDATE visitas SET estado = 'usado', hora_entrada = NOW() WHERE id = $1`,
-      [result.rows[0].id]
-    );
-    
-    res.json({ mensaje: 'Acceso permitido', visita: result.rows[0] });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Obtener visitas por unidad (propietario)
-app.get('/api/visitas/unidad/:unidad', async (req, res) => {
-  try {
-    const { unidad } = req.params;
-    const result = await pool.query(
-      'SELECT * FROM visitas WHERE unidad = $1 ORDER BY fecha DESC',
-      [unidad]
-    );
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Obtener todas las visitas (administrador)
-app.get('/api/visitas', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM visitas ORDER BY fecha DESC');
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// ============================================
+// INICIAR SERVIDOR
+// ============================================
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
