@@ -59,11 +59,18 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// Reportes
+// Ruta para recibir reportes desde app móvil
 app.post('/api/reportes', async (req, res) => {
   try {
     const { tipo, ubicacion, descripcion, urgencia, usuario } = req.body;
-    console.log('📱 Nuevo reporte:', { tipo, ubicacion, descripcion, urgencia, usuario });
+    
+    console.log('📱 Nuevo reporte desde app:', { tipo, ubicacion, descripcion, urgencia, usuario });
+    
+    // Verificar que la conexión a la base de datos está activa
+    if (!pool) {
+      console.error('❌ Pool no está inicializado');
+      return res.status(500).json({ error: 'Error de conexión a la base de datos' });
+    }
     
     const result = await pool.query(
       `INSERT INTO reportes (tipo, ubicacion, descripcion, urgencia, usuario, estado, fecha) 
@@ -72,14 +79,14 @@ app.post('/api/reportes', async (req, res) => {
       [tipo, ubicacion, descripcion, urgencia, usuario]
     );
     
-    console.log('✅ Reporte guardado:', result.rows[0]);
+    console.log('✅ Reporte guardado en BD:', result.rows[0]);
     res.json({ mensaje: 'Reporte guardado', reporte: result.rows[0], ok: true });
+    
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error en POST /api/reportes:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
-
 app.get('/api/reportes', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM reportes ORDER BY fecha DESC');
