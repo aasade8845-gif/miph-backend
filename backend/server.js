@@ -293,6 +293,43 @@ app.get('/api/proveedores', async (req, res) => {
   }
 });
 
+// Asignar un proveedor a una orden (desde el panel web)
+app.post('/api/ordenes/asignar', async (req, res) => {
+  try {
+    const { reporte_id, proveedor_id } = req.body;
+    
+    // Verificar si ya existe una orden para este reporte
+    const ordenExistente = await pool.query(
+      'SELECT * FROM ordenes_trabajo WHERE reporte_id = $1',
+      [reporte_id]
+    );
+    
+    if (ordenExistente.rows.length > 0) {
+      // Actualizar orden existente
+      const result = await pool.query(
+        `UPDATE ordenes_trabajo 
+         SET proveedor_id = $1, estado = 'aceptada', fecha_asignacion = NOW() 
+         WHERE reporte_id = $2 
+         RETURNING *`,
+        [proveedor_id, reporte_id]
+      );
+      res.json({ mensaje: 'Proveedor asignado', orden: result.rows[0] });
+    } else {
+      // Crear nueva orden
+      const result = await pool.query(
+        `INSERT INTO ordenes_trabajo (reporte_id, proveedor_id, estado, fecha_asignacion) 
+         VALUES ($1, $2, 'aceptada', NOW()) 
+         RETURNING *`,
+        [reporte_id, proveedor_id]
+      );
+      res.json({ mensaje: 'Proveedor asignado', orden: result.rows[0] });
+    }
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/proveedores', async (req, res) => {
   try {
     const { nombre, email, telefono, especialidad } = req.body;
