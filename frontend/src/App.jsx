@@ -6,6 +6,7 @@ import Reservas from './pages/Reservas';
 import Chat from './pages/Chat';
 import EmergenciasAdmin from './pages/EmergenciasAdmin';
 import VisitasAdmin from './pages/VisitasAdmin';
+import Proveedores from './pages/Proveedores';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -42,6 +43,10 @@ function App() {
 
   if (paginaActual === 'visitas-admin') {
   return <VisitasAdmin onNavigate={setPaginaActual} />;
+}
+
+if (paginaActual === 'proveedores') {
+  return <Proveedores onNavigate={setPaginaActual} />;
 }
 
   return <Dashboard onLogout={handleLogout} onNavigate={setPaginaActual} />;

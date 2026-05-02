@@ -192,6 +192,93 @@ app.put('/api/mensajes/:id/leido', async (req, res) => {
   }
 });
 
+// ============================================
+// RED DE PROVEEDORES
+// ============================================
+
+// Obtener todos los proveedores (para el panel web)
+app.get('/api/proveedores', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM proveedores ORDER BY especialidad, nombre');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Registrar un nuevo proveedor
+app.post('/api/proveedores', async (req, res) => {
+  try {
+    const { nombre, email, telefono, especialidad } = req.body;
+    const result = await pool.query(
+      'INSERT INTO proveedores (nombre, email, telefono, especialidad) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nombre, email, telefono, especialidad]
+    );
+    res.json({ mensaje: 'Proveedor registrado', proveedor: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Publicar una orden de trabajo (desde un reporte)
+app.post('/api/ordenes', async (req, res) => {
+  try {
+    const { reporte_id, especialidad, presupuesto } = req.body;
+    
+    // Buscar proveedores disponibles de esa especialidad
+    const proveedores = await pool.query(
+      'SELECT * FROM proveedores WHERE especialidad = $1 AND disponible = true',
+      [especialidad]
+    );
+    
+    if (proveedores.rows.length === 0) {
+      return res.status(404).json({ error: 'No hay proveedores disponibles' });
+    }
+    
+    const orden = await pool.query(
+      'INSERT INTO ordenes_trabajo (reporte_id, presupuesto, estado) VALUES ($1, $2, $3) RETURNING *',
+      [reporte_id, presupuesto, 'pendiente']
+    );
+    
+    res.json({ mensaje: 'Orden publicada', orden: orden.rows[0], proveedores: proveedores.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Proveedor acepta una orden
+app.put('/api/ordenes/:id/aceptar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { proveedor_id } = req.body;
+    
+    const result = await pool.query(
+      'UPDATE ordenes_trabajo SET proveedor_id = $1, estado = $2, fecha_asignacion = NOW() WHERE id = $3 RETURNING *',
+      [proveedor_id, 'aceptada', id]
+    );
+    
+    res.json({ mensaje: 'Orden aceptada', orden: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Obtener órdenes pendientes (para proveedores)
+app.get('/api/ordenes/pendientes', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT o.*, r.tipo, r.ubicacion, r.descripcion, r.urgencia 
+       FROM ordenes_trabajo o 
+       JOIN reportes r ON o.reporte_id = r.id 
+       WHERE o.estado = 'pendiente' 
+       ORDER BY r.urgencia DESC, o.creado_en ASC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Obtener todos los contactos de emergencia
 app.get('/api/emergencias', async (req, res) => {
   try {
