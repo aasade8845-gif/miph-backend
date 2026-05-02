@@ -5,7 +5,7 @@ function Reportes({ onNavigate }) {
   const [reportes, setReportes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('todos');
-  const [mostrarProveedores, setMostrarProveedores] = useState(null);
+  const [mostrarProveedores, setMostrarProveedores] = useState(false);
   const [proveedoresDisponibles, setProveedoresDisponibles] = useState([]);
   const [reporteSeleccionado, setReporteSeleccionado] = useState(null);
 
@@ -35,7 +35,15 @@ function Reportes({ onNavigate }) {
     }
   };
 
-  const derivarAProveedor = async (reporte, especialidad) => {
+  const getEspecialidadPorTipo = (tipo) => {
+    if (tipo.includes('Eléctrico')) return 'electricista';
+    if (tipo.includes('Plomería')) return 'plomero';
+    if (tipo.includes('Limpieza')) return 'limpieza';
+    return 'mantenimiento';
+  };
+
+  const derivarAProveedor = async (reporte) => {
+    const especialidad = getEspecialidadPorTipo(reporte.tipo);
     try {
       const response = await axios.post('https://miph-backend-api.onrender.com/api/ordenes', {
         reporte_id: reporte.id,
@@ -43,8 +51,8 @@ function Reportes({ onNavigate }) {
         presupuesto: 0
       });
       setProveedoresDisponibles(response.data.proveedores);
-      setMostrarProveedores(true);
       setReporteSeleccionado(reporte);
+      setMostrarProveedores(true);
     } catch (error) {
       alert('No hay proveedores disponibles para esta especialidad');
     }
@@ -52,24 +60,17 @@ function Reportes({ onNavigate }) {
 
   const asignarProveedor = async (proveedorId) => {
     try {
-      await axios.put(`https://miph-backend-api.onrender.com/api/ordenes/${reporteSeleccionado.id}/aceptar?orden_id=1`, {
+      // Crear una orden temporal (simplificado)
+      await axios.post('https://miph-backend-api.onrender.com/api/ordenes/asignar', {
+        reporte_id: reporteSeleccionado.id,
         proveedor_id: proveedorId
       });
-      alert('Proveedor asignado correctamente');
+      alert('✅ Proveedor asignado correctamente');
       setMostrarProveedores(false);
       cargarReportes();
     } catch (error) {
-      alert('Error al asignar proveedor');
+      alert('❌ Error al asignar proveedor');
     }
-  };
-
-  const getEspecialidadPorTipo = (tipo) => {
-    if (tipo.includes('Eléctrico')) return 'electricista';
-    if (tipo.includes('Plomería')) return 'plomero';
-    if (tipo.includes('Limpieza')) return 'limpieza';
-    if (tipo.includes('Jardinería')) return 'jardineria';
-    if (tipo.includes('Pintura')) return 'pintor';
-    return 'mantenimiento';
   };
 
   const getEstadoColor = (estado) => {
@@ -112,6 +113,7 @@ function Reportes({ onNavigate }) {
         <p style={{ opacity: 0.8 }}>Administra los reportes enviados desde la app móvil</p>
       </div>
 
+      {/* Filtros */}
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <button onClick={() => setFiltro('todos')} style={{ padding: '8px 16px', background: filtro === 'todos' ? '#2e7d32' : '#f0f0f0', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Todos</button>
         <button onClick={() => setFiltro('pendiente')} style={{ padding: '8px 16px', background: filtro === 'pendiente' ? '#ff9800' : '#f0f0f0', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Pendientes</button>
@@ -119,6 +121,7 @@ function Reportes({ onNavigate }) {
         <button onClick={() => setFiltro('resuelto')} style={{ padding: '8px 16px', background: filtro === 'resuelto' ? '#4caf50' : '#f0f0f0', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Resueltos</button>
       </div>
 
+      {/* Tabla de reportes */}
       <div style={{ background: 'white', borderRadius: '15px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f9f9f9' }}>
@@ -175,7 +178,7 @@ function Reportes({ onNavigate }) {
                 <td style={{ padding: '15px' }}>{new Date(reporte.fecha).toLocaleString()}</td>
                 <td style={{ padding: '15px' }}>
                   <button
-                    onClick={() => derivarAProveedor(reporte, getEspecialidadPorTipo(reporte.tipo))}
+                    onClick={() => derivarAProveedor(reporte)}
                     style={{
                       background: '#ff9800',
                       color: 'white',
@@ -188,7 +191,7 @@ function Reportes({ onNavigate }) {
                     🔧 Derivar a proveedor
                   </button>
                 </td>
-              </table>
+              </tr>
             ))}
           </tbody>
         </table>
@@ -224,7 +227,7 @@ function Reportes({ onNavigate }) {
             overflow: 'auto'
           }}>
             <h3>🔧 Seleccionar proveedor</h3>
-            <p>Reporte: {reporteSeleccionado?.tipo} - {reporteSeleccionado?.ubicacion}</p>
+            <p><strong>Reporte:</strong> {reporteSeleccionado?.tipo} - {reporteSeleccionado?.ubicacion}</p>
             {proveedoresDisponibles.length === 0 ? (
               <p>No hay proveedores disponibles para esta especialidad</p>
             ) : (
@@ -238,7 +241,7 @@ function Reportes({ onNavigate }) {
                 }}>
                   <div>
                     <strong>{p.nombre}</strong> - {p.especialidad}<br />
-                    📞 {p.telefono} | ✉️ {p.email}
+                    📞 {p.telefono}
                   </div>
                   <button
                     onClick={() => asignarProveedor(p.id)}
